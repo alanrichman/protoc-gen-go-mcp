@@ -21,6 +21,7 @@ import (
 	"path"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/redpanda-data/protoc-gen-go-mcp/pkg/gen"
 	"github.com/redpanda-data/protoc-gen-go-mcp/pkg/runtime"
@@ -451,10 +452,17 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 			comment := string(meth.Comments.Leading)
 
 			// Generate ONE tool at a time, write it, then let it be GC'd
+			g.logf("      Generating schemas for %s", meth.Desc.FullName())
+			t0 := time.Now()
 			toolStandard, toolOpenAI := gen.ToolForMethod(meth.Desc, comment)
+			schemaGenTime := time.Since(t0)
+			g.logf("      Schema generation took %v", schemaGenTime)
+
 			toolKey := svc.GoName + "_" + meth.GoName
 
 			// Execute tool template for standard variant
+			g.logf("      Writing standard tool for %s", meth.Desc.FullName())
+			t1 := time.Now()
 			if err := toolTpl.Execute(g.gf, map[string]any{
 				"Key":  toolKey,
 				"Tool": toolStandard,
@@ -462,8 +470,11 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 				g.gen.Error(err)
 				return
 			}
+			g.logf("      Standard tool write took %v", time.Since(t1))
 
 			// Execute tool template for OpenAI variant
+			g.logf("      Writing OpenAI tool for %s", meth.Desc.FullName())
+			t2 := time.Now()
 			if err := toolTpl.Execute(g.gf, map[string]any{
 				"Key":  toolKey + "OpenAI",
 				"Tool": toolOpenAI,
@@ -471,6 +482,7 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 				g.gen.Error(err)
 				return
 			}
+			g.logf("      OpenAI tool write took %v", time.Since(t2))
 
 			// Store lightweight metadata (no schemas) for handler generation
 			s[meth.GoName] = Tool{
@@ -480,6 +492,7 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 				MCPToolOpenAI: runtime.Tool{Name: toolOpenAI.Name},
 			}
 
+			g.logf("      Completed %s", meth.Desc.FullName())
 			// toolStandard and toolOpenAI are now out of scope and can be GC'd
 		}
 		services[string(svc.Desc.Name())] = s
@@ -489,6 +502,7 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 	g.gf.P()
 
 	// Generate handler functions using template (lightweight - no schemas)
+	g.logf("  Generating handler functions")
 	params := TplParams{
 		PackageName: string(g.f.Desc.Package()),
 		SourcePath:  g.f.Desc.Path(),
@@ -503,5 +517,6 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 		return
 	}
 
+	g.logf("  Completed handler generation")
 	g.logf("Finished generation for file: %s", file.Desc.Path())
 }
