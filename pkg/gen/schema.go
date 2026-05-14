@@ -545,14 +545,14 @@ func MangleHeadIfTooLong(name string, maxLen int) string {
 
 // ToolForMethod generates standard and OpenAI-compatible MCP tools
 // for a given RPC method descriptor.
-func ToolForMethod(method protoreflect.MethodDescriptor, comment string) (standard, openAI runtime.Tool) {
+func ToolForMethod(method protoreflect.MethodDescriptor, comment string, maxRecursionDepth int) (standard, openAI runtime.Tool) {
 	toolName := MangleHeadIfTooLong(strings.ReplaceAll(string(method.FullName()), ".", "_"), 64)
 	description := CleanComment(comment)
 
-	standardIn := marshalTopLevelSchema(method.Input(), SchemaOptions{OpenAICompat: false})
-	standardOut := marshalTopLevelSchema(method.Output(), SchemaOptions{OpenAICompat: false})
-	openAIIn := marshalTopLevelSchema(method.Input(), SchemaOptions{OpenAICompat: true})
-	openAIOut := marshalTopLevelSchema(method.Output(), SchemaOptions{OpenAICompat: true})
+	standardIn := marshalTopLevelSchema(method.Input(), SchemaOptions{OpenAICompat: false, MaxRecursionDepth: maxRecursionDepth})
+	standardOut := marshalTopLevelSchema(method.Output(), SchemaOptions{OpenAICompat: false, MaxRecursionDepth: maxRecursionDepth})
+	openAIIn := marshalTopLevelSchema(method.Input(), SchemaOptions{OpenAICompat: true, MaxRecursionDepth: maxRecursionDepth})
+	openAIOut := marshalTopLevelSchema(method.Output(), SchemaOptions{OpenAICompat: true, MaxRecursionDepth: maxRecursionDepth})
 
 	standard = runtime.Tool{
 		Name:            toolName,

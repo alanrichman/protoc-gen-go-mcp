@@ -549,7 +549,7 @@ func TestToolForMethod_EdgeCaseService(t *testing.T) {
 		method := svc.Methods().Get(i)
 		t.Run(string(method.Name()), func(t *testing.T) {
 			g := NewWithT(t)
-			standard, openAI := ToolForMethod(method, "Test "+string(method.Name()))
+			standard, openAI := ToolForMethod(method, "Test "+string(method.Name()), 3)
 
 			g.Expect(len(standard.Name)).To(BeNumerically("<=", 64))
 			g.Expect(standard.Name).To(Equal(openAI.Name))

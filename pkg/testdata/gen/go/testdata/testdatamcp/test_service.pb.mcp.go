@@ -23,29 +23,17 @@ var (
 		RawInputSchema:  json.RawMessage("{\"anyOf\":[{\"$comment\":\"In this schema, there is a oneOf group for every protobuf oneOf block in the message.\",\"oneOf\":[{\"properties\":{\"product\":{\"properties\":{\"price\":{\"type\":\"number\"},\"quantity\":{\"type\":\"integer\"}},\"required\":[],\"type\":\"object\"}},\"required\":[\"product\"]},{\"properties\":{\"service\":{\"properties\":{\"duration\":{\"type\":\"string\"},\"recurring\":{\"type\":\"boolean\"}},\"required\":[],\"type\":\"object\"}},\"required\":[\"service\"]}]}],\"properties\":{\"description\":{\"type\":\"string\"},\"labels\":{\"additionalProperties\":{\"type\":\"string\"},\"propertyNames\":{\"type\":\"string\"},\"type\":\"object\"},\"name\":{\"type\":\"string\"},\"tags\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"thumbnail\":{\"contentEncoding\":\"base64\",\"format\":\"byte\",\"type\":\"string\"}},\"required\":[\"name\"],\"type\":\"object\"}"),
 		RawOutputSchema: json.RawMessage("{\"properties\":{\"created_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}"),
 	}
-	TestService_GetItemTool = runtime.Tool{
-		Name:            "testdata_TestService_GetItem",
-		Description:     "GetItem retrieves an item by ID\n",
-		RawInputSchema:  json.RawMessage("{\"properties\":{\"id\":{\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}"),
-		RawOutputSchema: json.RawMessage("{\"properties\":{\"item\":{\"properties\":{\"created_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]},\"description\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"labels\":{\"additionalProperties\":{\"type\":\"string\"},\"propertyNames\":{\"type\":\"string\"},\"type\":\"object\"},\"name\":{\"type\":\"string\"},\"updated_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]}},\"required\":[],\"type\":\"object\"}},\"required\":[],\"type\":\"object\"}"),
-	}
-	TestService_ProcessWellKnownTypesTool = runtime.Tool{
-		Name:            "testdata_TestService_ProcessWellKnownTypes",
-		Description:     "Test well-known types handling\n",
-		RawInputSchema:  json.RawMessage("{\"properties\":{\"config\":{\"description\":\"represents a google.protobuf.Value, a dynamic JSON value (string, number, boolean, array, object).\"},\"metadata\":{\"additionalProperties\":true,\"type\":\"object\"},\"payload\":{\"properties\":{\"@type\":{\"type\":\"string\"},\"value\":{}},\"required\":[\"@type\"],\"type\":[\"object\",\"null\"]},\"timestamp\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]}},\"required\":[],\"type\":\"object\"}"),
-		RawOutputSchema: json.RawMessage("{\"properties\":{\"message\":{\"type\":\"string\"},\"success\":{\"type\":\"boolean\"}},\"required\":[],\"type\":\"object\"}"),
-	}
-	TestService_TestValidationTool = runtime.Tool{
-		Name:            "testdata_TestService_TestValidation",
-		Description:     "Test protovalidate constraints\n",
-		RawInputSchema:  json.RawMessage("{\"properties\":{\"age\":{\"maximum\":150,\"minimum\":0,\"type\":\"integer\"},\"email\":{\"format\":\"email\",\"type\":\"string\"},\"name\":{\"maxLength\":50,\"minLength\":3,\"type\":\"string\"},\"resource_group_id\":{\"format\":\"uuid\",\"type\":\"string\"},\"timestamp\":{\"minimum\":1,\"type\":\"string\"},\"username\":{\"pattern\":\"^[a-zA-Z][a-zA-Z0-9_]{2,19}$\",\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}"),
-		RawOutputSchema: json.RawMessage("{\"properties\":{\"message\":{\"type\":\"string\"},\"success\":{\"type\":\"boolean\"}},\"required\":[],\"type\":\"object\"}"),
-	}
 	TestService_CreateItemToolOpenAI = runtime.Tool{
 		Name:            "testdata_TestService_CreateItem",
 		Description:     "CreateItem creates a new item\n",
 		RawInputSchema:  json.RawMessage("{\"additionalProperties\":false,\"properties\":{\"description\":{\"type\":\"string\"},\"labels\":{\"description\":\"List of key value pairs\",\"items\":{\"additionalProperties\":false,\"properties\":{\"key\":{\"type\":\"string\"},\"value\":{\"type\":\"string\"}},\"required\":[\"key\",\"value\"],\"type\":\"object\"},\"type\":\"array\"},\"name\":{\"type\":\"string\"},\"product\":{\"additionalProperties\":false,\"description\":\"Note: This field is part of the 'item_type' oneof group. Only one field in this group can be set at a time. Setting multiple fields in the group WILL result in an error. Protobuf oneOf semantics apply.\",\"properties\":{\"price\":{\"type\":\"number\"},\"quantity\":{\"type\":\"integer\"}},\"required\":[\"price\",\"quantity\"],\"type\":[\"object\",\"null\"]},\"service\":{\"additionalProperties\":false,\"description\":\"Note: This field is part of the 'item_type' oneof group. Only one field in this group can be set at a time. Setting multiple fields in the group WILL result in an error. Protobuf oneOf semantics apply.\",\"properties\":{\"duration\":{\"type\":\"string\"},\"recurring\":{\"type\":\"boolean\"}},\"required\":[\"duration\",\"recurring\"],\"type\":[\"object\",\"null\"]},\"tags\":{\"items\":{\"type\":\"string\"},\"type\":\"array\"},\"thumbnail\":{\"contentEncoding\":\"base64\",\"type\":\"string\"}},\"required\":[\"name\",\"description\",\"labels\",\"tags\",\"product\",\"service\",\"thumbnail\"],\"type\":\"object\"}"),
 		RawOutputSchema: json.RawMessage("{\"additionalProperties\":false,\"properties\":{\"created_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"id\",\"created_at\"],\"type\":\"object\"}"),
+	}
+	TestService_GetItemTool = runtime.Tool{
+		Name:            "testdata_TestService_GetItem",
+		Description:     "GetItem retrieves an item by ID\n",
+		RawInputSchema:  json.RawMessage("{\"properties\":{\"id\":{\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}"),
+		RawOutputSchema: json.RawMessage("{\"properties\":{\"item\":{\"properties\":{\"created_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]},\"description\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"labels\":{\"additionalProperties\":{\"type\":\"string\"},\"propertyNames\":{\"type\":\"string\"},\"type\":\"object\"},\"name\":{\"type\":\"string\"},\"updated_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]}},\"required\":[],\"type\":\"object\"}},\"required\":[],\"type\":\"object\"}"),
 	}
 	TestService_GetItemToolOpenAI = runtime.Tool{
 		Name:            "testdata_TestService_GetItem",
@@ -53,11 +41,23 @@ var (
 		RawInputSchema:  json.RawMessage("{\"additionalProperties\":false,\"properties\":{\"id\":{\"type\":\"string\"}},\"required\":[\"id\"],\"type\":\"object\"}"),
 		RawOutputSchema: json.RawMessage("{\"additionalProperties\":false,\"properties\":{\"item\":{\"additionalProperties\":false,\"properties\":{\"created_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]},\"description\":{\"type\":\"string\"},\"id\":{\"type\":\"string\"},\"labels\":{\"description\":\"List of key value pairs\",\"items\":{\"additionalProperties\":false,\"properties\":{\"key\":{\"type\":\"string\"},\"value\":{\"type\":\"string\"}},\"required\":[\"key\",\"value\"],\"type\":\"object\"},\"type\":\"array\"},\"name\":{\"type\":\"string\"},\"updated_at\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]}},\"required\":[\"id\",\"name\",\"description\",\"labels\",\"created_at\",\"updated_at\"],\"type\":\"object\"}},\"required\":[\"item\"],\"type\":\"object\"}"),
 	}
+	TestService_ProcessWellKnownTypesTool = runtime.Tool{
+		Name:            "testdata_TestService_ProcessWellKnownTypes",
+		Description:     "Test well-known types handling\n",
+		RawInputSchema:  json.RawMessage("{\"properties\":{\"config\":{\"description\":\"represents a google.protobuf.Value, a dynamic JSON value (string, number, boolean, array, object).\"},\"metadata\":{\"additionalProperties\":true,\"type\":\"object\"},\"payload\":{\"properties\":{\"@type\":{\"type\":\"string\"},\"value\":{}},\"required\":[\"@type\"],\"type\":[\"object\",\"null\"]},\"timestamp\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]}},\"required\":[],\"type\":\"object\"}"),
+		RawOutputSchema: json.RawMessage("{\"properties\":{\"message\":{\"type\":\"string\"},\"success\":{\"type\":\"boolean\"}},\"required\":[],\"type\":\"object\"}"),
+	}
 	TestService_ProcessWellKnownTypesToolOpenAI = runtime.Tool{
 		Name:            "testdata_TestService_ProcessWellKnownTypes",
 		Description:     "Test well-known types handling\n",
 		RawInputSchema:  json.RawMessage("{\"additionalProperties\":false,\"properties\":{\"config\":{\"description\":\"string representation of any JSON value. represents a google.protobuf.Value, a dynamic JSON value (string, number, boolean, array, object).\",\"type\":\"string\"},\"metadata\":{\"description\":\"string representation of any JSON object. represents a google.protobuf.Struct, a dynamic JSON object.\",\"type\":\"string\"},\"payload\":{\"additionalProperties\":false,\"properties\":{\"@type\":{\"type\":\"string\"},\"value\":{}},\"required\":[\"@type\",\"value\"],\"type\":\"object\"},\"timestamp\":{\"format\":\"date-time\",\"type\":[\"string\",\"null\"]}},\"required\":[\"metadata\",\"config\",\"payload\",\"timestamp\"],\"type\":\"object\"}"),
 		RawOutputSchema: json.RawMessage("{\"additionalProperties\":false,\"properties\":{\"message\":{\"type\":\"string\"},\"success\":{\"type\":\"boolean\"}},\"required\":[\"success\",\"message\"],\"type\":\"object\"}"),
+	}
+	TestService_TestValidationTool = runtime.Tool{
+		Name:            "testdata_TestService_TestValidation",
+		Description:     "Test protovalidate constraints\n",
+		RawInputSchema:  json.RawMessage("{\"properties\":{\"age\":{\"maximum\":150,\"minimum\":0,\"type\":\"integer\"},\"email\":{\"format\":\"email\",\"type\":\"string\"},\"name\":{\"maxLength\":50,\"minLength\":3,\"type\":\"string\"},\"resource_group_id\":{\"format\":\"uuid\",\"type\":\"string\"},\"timestamp\":{\"minimum\":1,\"type\":\"string\"},\"username\":{\"pattern\":\"^[a-zA-Z][a-zA-Z0-9_]{2,19}$\",\"type\":\"string\"}},\"required\":[],\"type\":\"object\"}"),
+		RawOutputSchema: json.RawMessage("{\"properties\":{\"message\":{\"type\":\"string\"},\"success\":{\"type\":\"boolean\"}},\"required\":[],\"type\":\"object\"}"),
 	}
 	TestService_TestValidationToolOpenAI = runtime.Tool{
 		Name:            "testdata_TestService_TestValidation",

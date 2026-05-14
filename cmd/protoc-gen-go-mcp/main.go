@@ -15,6 +15,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/redpanda-data/protoc-gen-go-mcp/pkg/generator"
 	"google.golang.org/protobuf/compiler/protogen"
@@ -32,15 +33,33 @@ func main() {
 		false,
 		"Enable debug logging to stderr",
 	)
+	maxRecursionDepth := flagSet.Int(
+		"max_recursion_depth",
+		3,
+		"Maximum depth for recursive message expansion in schema generation (default 3). Use 1 to detect circular references immediately and reduce schema size.",
+	)
+	generateStandard := flagSet.Bool(
+		"generate_standard",
+		true,
+		"Generate standard MCP tool variants (default true)",
+	)
+	generateOpenAI := flagSet.Bool(
+		"generate_openai",
+		true,
+		"Generate OpenAI-compatible tool variants (default true)",
+	)
 
 	protogen.Options{
 		ParamFunc: flagSet.Set,
 	}.Run(func(gen *protogen.Plugin) error {
+		if !*generateStandard && !*generateOpenAI {
+			return fmt.Errorf("at least one of --generate_standard or --generate_openai must be true")
+		}
 		for _, f := range gen.Files {
 			if !f.Generate {
 				continue
 			}
-			generator.NewFileGenerator(f, gen, *debug).Generate(*packageSuffix)
+			generator.NewFileGenerator(f, gen, *debug, *maxRecursionDepth, *generateStandard, *generateOpenAI).Generate(*packageSuffix)
 		}
 		return nil
 	})

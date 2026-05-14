@@ -38,15 +38,25 @@ type FileGenerator struct {
 	f   *protogen.File
 	gen *protogen.Plugin
 
-	gf           *protogen.GeneratedFile
-	openAICompat bool
-	debug        bool
+	gf                *protogen.GeneratedFile
+	openAICompat      bool
+	debug             bool
+	maxRecursionDepth int
+	generateStandard  bool
+	generateOpenAI    bool
 }
 
-func NewFileGenerator(f *protogen.File, gen *protogen.Plugin, debug bool) *FileGenerator {
+func NewFileGenerator(f *protogen.File, gen *protogen.Plugin, debug bool, maxRecursionDepth int, generateStandard, generateOpenAI bool) *FileGenerator {
 	gen.SupportedFeatures |= uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL)
 
-	return &FileGenerator{f: f, gen: gen, debug: debug}
+	return &FileGenerator{
+		f:                 f,
+		gen:               gen,
+		debug:             debug,
+		maxRecursionDepth: maxRecursionDepth,
+		generateStandard:  generateStandard,
+		generateOpenAI:    generateOpenAI,
+	}
 }
 
 func (g *FileGenerator) logf(format string, args ...any) {
@@ -74,7 +84,7 @@ import (
 var (
 `
 
-const toolTemplate = `  {{.Key}}Tool = runtime.Tool{
+const toolTemplate = `  {{.Key}} = runtime.Tool{
     Name: {{ printf "%q" .Tool.Name }},
     Description: {{ printf "%q" .Tool.Description }},
     RawInputSchema: json.RawMessage({{ quoteBytes .Tool.RawInputSchema }}),
@@ -96,6 +106,7 @@ type {{$serviceName}}Server interface {
 }
 {{ end }}
 
+{{- if .GenerateStandard }}
 {{- range $key, $val := .Services }}
 // Register{{$key}}Handler registers standard MCP handlers for {{$key}}
 func Register{{$key}}Handler(s runtime.MCPServer, srv {{$key}}Server, opts ...runtime.Option) {
@@ -143,7 +154,11 @@ func Register{{$key}}Handler(s runtime.MCPServer, srv {{$key}}Server, opts ...ru
   })
   {{- end }}
 }
+{{- end }}
+{{- end }}
 
+{{- if .GenerateOpenAI }}
+{{- range $key, $val := .Services }}
 // Register{{$key}}HandlerOpenAI registers OpenAI-compatible MCP handlers for {{$key}}
 func Register{{$key}}HandlerOpenAI(s runtime.MCPServer, srv {{$key}}Server, opts ...runtime.Option) {
   config := runtime.NewConfig()
@@ -192,7 +207,11 @@ func Register{{$key}}HandlerOpenAI(s runtime.MCPServer, srv {{$key}}Server, opts
   })
   {{- end }}
 }
+{{- end }}
+{{- end }}
 
+{{- if and .GenerateStandard .GenerateOpenAI }}
+{{- range $key, $val := .Services }}
 // Register{{$key}}HandlerWithProvider registers handlers for the specified LLM provider
 func Register{{$key}}HandlerWithProvider(s runtime.MCPServer, srv {{$key}}Server, provider runtime.LLMProvider, opts ...runtime.Option) {
   switch provider {
@@ -205,6 +224,7 @@ func Register{{$key}}HandlerWithProvider(s runtime.MCPServer, srv {{$key}}Server
   }
 }
 {{- end }}
+{{- end }}
 
 {{- range $serviceName, $methods := .Services }}
 // {{$serviceName}}Client is compatible with the grpc-go client interface.
@@ -216,6 +236,7 @@ type {{$serviceName}}Client interface {
 {{ end }}
 
 
+{{- if .GenerateStandard }}
 {{- range $serviceName, $methods := .Services }}
 // Connect{{$serviceName}}Client is compatible with the connectrpc-go client interface.
 type Connect{{$serviceName}}Client interface {
@@ -320,17 +341,19 @@ func ForwardTo{{$key}}Client(s runtime.MCPServer, client {{$key}}Client, opts ..
   {{- end }}
 }
 {{- end }}
-
+{{- end }}
 
 `
 
 type TplParams struct {
-	PackageName string
-	SourcePath  string
-	GoPackage   string
-	Tools       map[string]runtime.Tool
-	ToolsOpenAI map[string]runtime.Tool
-	Services    map[string]map[string]Tool
+	PackageName      string
+	SourcePath       string
+	GoPackage        string
+	Tools            map[string]runtime.Tool
+	ToolsOpenAI      map[string]runtime.Tool
+	Services         map[string]map[string]Tool
+	GenerateStandard bool
+	GenerateOpenAI   bool
 }
 
 type Tool struct {
@@ -454,35 +477,39 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 			// Generate ONE tool at a time, write it, then let it be GC'd
 			g.logf("      Generating schemas for %s", meth.Desc.FullName())
 			t0 := time.Now()
-			toolStandard, toolOpenAI := gen.ToolForMethod(meth.Desc, comment)
+			toolStandard, toolOpenAI := gen.ToolForMethod(meth.Desc, comment, g.maxRecursionDepth)
 			schemaGenTime := time.Since(t0)
 			g.logf("      Schema generation took %v", schemaGenTime)
 
 			toolKey := svc.GoName + "_" + meth.GoName
 
-			// Execute tool template for standard variant
-			g.logf("      Writing standard tool for %s", meth.Desc.FullName())
-			t1 := time.Now()
-			if err := toolTpl.Execute(g.gf, map[string]any{
-				"Key":  toolKey,
-				"Tool": toolStandard,
-			}); err != nil {
-				g.gen.Error(err)
-				return
+			// Execute tool template for standard variant (if enabled)
+			if g.generateStandard {
+				g.logf("      Writing standard tool for %s", meth.Desc.FullName())
+				t1 := time.Now()
+				if err := toolTpl.Execute(g.gf, map[string]any{
+					"Key":  toolKey + "Tool",
+					"Tool": toolStandard,
+				}); err != nil {
+					g.gen.Error(err)
+					return
+				}
+				g.logf("      Standard tool write took %v", time.Since(t1))
 			}
-			g.logf("      Standard tool write took %v", time.Since(t1))
 
-			// Execute tool template for OpenAI variant
-			g.logf("      Writing OpenAI tool for %s", meth.Desc.FullName())
-			t2 := time.Now()
-			if err := toolTpl.Execute(g.gf, map[string]any{
-				"Key":  toolKey + "OpenAI",
-				"Tool": toolOpenAI,
-			}); err != nil {
-				g.gen.Error(err)
-				return
+			// Execute tool template for OpenAI variant (if enabled)
+			if g.generateOpenAI {
+				g.logf("      Writing OpenAI tool for %s", meth.Desc.FullName())
+				t2 := time.Now()
+				if err := toolTpl.Execute(g.gf, map[string]any{
+					"Key":  toolKey + "ToolOpenAI",
+					"Tool": toolOpenAI,
+				}); err != nil {
+					g.gen.Error(err)
+					return
+				}
+				g.logf("      OpenAI tool write took %v", time.Since(t2))
 			}
-			g.logf("      OpenAI tool write took %v", time.Since(t2))
 
 			// Store lightweight metadata (no schemas) for handler generation
 			s[meth.GoName] = Tool{
@@ -504,12 +531,14 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 	// Generate handler functions using template (lightweight - no schemas)
 	g.logf("  Generating handler functions")
 	params := TplParams{
-		PackageName: string(g.f.Desc.Package()),
-		SourcePath:  g.f.Desc.Path(),
-		GoPackage:   string(g.f.GoPackageName),
-		Services:    services,
-		Tools:       nil, // Not needed - already written
-		ToolsOpenAI: nil, // Not needed - already written
+		PackageName:      string(g.f.Desc.Package()),
+		SourcePath:       g.f.Desc.Path(),
+		GoPackage:        string(g.f.GoPackageName),
+		Services:         services,
+		Tools:            nil, // Not needed - already written
+		ToolsOpenAI:      nil, // Not needed - already written
+		GenerateStandard: g.generateStandard,
+		GenerateOpenAI:   g.generateOpenAI,
 	}
 
 	if err := handlerTpl.Execute(g.gf, params); err != nil {
