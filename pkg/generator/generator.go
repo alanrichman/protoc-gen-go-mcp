@@ -63,10 +63,20 @@ import (
 
 var (
 {{- range $key, $val := .Tools }}
-  {{$key}}Tool = {{ printf "%#v" $val }}
+  {{$key}}Tool = runtime.Tool{
+    Name: {{ printf "%q" $val.Name }},
+    Description: {{ printf "%q" $val.Description }},
+    RawInputSchema: json.RawMessage({{ quoteBytes $val.RawInputSchema }}),
+    RawOutputSchema: json.RawMessage({{ quoteBytes $val.RawOutputSchema }}),
+  }
 {{- end }}
 {{- range $key, $val := .ToolsOpenAI }}
-  {{$key}}ToolOpenAI = {{ printf "%#v" $val }}
+  {{$key}}ToolOpenAI = runtime.Tool{
+    Name: {{ printf "%q" $val.Name }},
+    Description: {{ printf "%q" $val.Description }},
+    RawInputSchema: json.RawMessage({{ quoteBytes $val.RawInputSchema }}),
+    RawOutputSchema: json.RawMessage({{ quoteBytes $val.RawOutputSchema }}),
+  }
 {{- end }}
 )
 
@@ -374,7 +384,11 @@ func (g *FileGenerator) Generate(packageSuffix string) {
 	}
 
 	fileTpl := fileTemplate
-	tpl, err := template.New("gen").Parse(fileTpl)
+	tpl, err := template.New("gen").Funcs(template.FuncMap{
+		"quoteBytes": func(b []byte) string {
+			return fmt.Sprintf("%q", string(b))
+		},
+	}).Parse(fileTpl)
 	if err != nil {
 		g.gen.Error(err)
 		return
